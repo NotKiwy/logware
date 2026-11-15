@@ -1,0 +1,10 @@
+.env
+.dev
+.git
+go.work
+go.work.sum
+web/node_modules
+web/dist
+deploy/*/.env
+.deploy
+deploy/edge/tls

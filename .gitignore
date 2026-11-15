@@ -1,0 +1,10 @@
+.env
+go.work
+go.work.sum
+/plugins/
+.dev/
+web/node_modules/
+web/dist/
+.deploy
+deploy/edge/tls/
+.DS_Store

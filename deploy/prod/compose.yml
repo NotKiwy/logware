@@ -1,0 +1,60 @@
+name: logware-prod
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: logware
+      POSTGRES_DB: logware
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logware -d logware"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  bot:
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      DB_URL: postgres://logware:${DB_PASS}@db:5432/logware?sslmode=disable
+      PUBLIC_URL: https://${DOMAIN}
+      OWNER: ${OWNER:-}
+      GITHUB: ${GITHUB:-}
+      CRYPTOBOT_TOKEN: ${CRYPTOBOT_TOKEN:-}
+      XROCKET_TOKEN: ${XROCKET_TOKEN:-}
+      XROCKET_SECRET: ${XROCKET_SECRET:-}
+    networks:
+      default:
+      edge:
+        aliases:
+          - prod-bot
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS}
+    volumes:
+      - /opt/logware-backups/prod:/backups
+    entrypoint: ["sh", "-c", "while true; do d=$$(date +%a); pg_dump -h db -U logware -d logware -Fc -f /backups/tmp.dump && mv /backups/tmp.dump /backups/logware-$$d.dump; sleep 86400; done"]
+
+networks:
+  edge:
+    name: logware-edge
+    external: true
+
+volumes:
+  db:

@@ -1,0 +1,28 @@
+name: logware-edge
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      APP: ${APP:-app.logware.dev}
+      DEV: ${DEV:-non-prod.logware.dev}
+      PAY: ${PAY:-pay.logware.dev}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+      - /opt/logware-tls:/tls:ro
+    networks:
+      - edge
+
+networks:
+  edge:
+    name: logware-edge
+    external: true
+
+volumes:
+  caddy:
